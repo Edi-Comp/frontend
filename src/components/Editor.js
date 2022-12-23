@@ -9,7 +9,7 @@ function Editor() {
   var timeout;
 
   useEffect(() => {
-    const s = io("http://localhost:5000");
+    const s = io("https://edicomp-backend.onrender.com/");
     setSocket(s);
     return () => {
       saveDocument();
