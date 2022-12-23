@@ -12,18 +12,28 @@ function Editor() {
     const s = io("http://localhost:5000");
     setSocket(s);
     return () => {
+      saveDocument();
       s.disconnect();
     };
   }, []);
+
+  // On Reloading
+  window.onbeforeunload = function (e) {
+    saveDocument();
+  };
+
+  // On Closing Tab
+  window.onpopstate = (e) => {
+    saveDocument();
+  };
 
   //To Push code to the database
   const saveDocument = () => {
     console.log("saving from frontend");
     socket.emit("save-document", quill.getText());
-    console.log(quill.getText());
   };
 
-  // loading the perticular id document
+  // loading the document when joining
   useEffect(() => {
     if (socket == null || quill == null) return;
     socket.once("load-document", (text) => {
@@ -33,10 +43,11 @@ function Editor() {
     socket.emit("join-room", 1, "zaid");
   }, [socket, quill]);
 
+  // Update doc for other users when one of them saves their document
   useEffect(() => {
     if (quill == null || socket == null) return;
     socket.on("re-load-document", (doc) => {
-      console.log("reloading")
+      console.log("reloading");
       quill.setText(doc);
     });
   }, [socket, quill]);
@@ -46,6 +57,9 @@ function Editor() {
     if (quill == null || socket == null) return;
     socket.on("user-connected", (username) => {
       saveDocument();
+    });
+    socket.on("user-disconnected", (username) => {
+      console.log(username + " diconnected");
     });
   }, [socket, quill]);
 
@@ -62,8 +76,6 @@ function Editor() {
       socket.off("recieve-message", handler);
     };
   }, [socket, quill]);
-
-  // useEffect for change in quill editor text
 
   // Send changes from socket to socket
   useEffect(() => {
@@ -98,11 +110,11 @@ function Editor() {
           id="code-editor"
           className="main-editor-code"
           ref={editorRef}
-          // onKeyUp={() => {
-          //   console.log("key up");
-          //   clearTimeout(timeout);
-          //   timeout = setTimeout(saveDocument, 500);
-          // }}
+          onKeyUp={() => {
+            console.log("key up");
+            clearTimeout(timeout);
+            timeout = setTimeout(saveDocument, 60000);
+          }}
           // onKeyDown={() => {
           //   console.log("key down")
           //   clearTimeout(timeout);
