@@ -16,8 +16,9 @@ function Editor() {
     };
   }, []);
 
-  const doneTyping = () => {
-    console.log("saving from frontend")
+  //To Push code to the database
+  const saveDocument = () => {
+    console.log("saving from frontend");
     socket.emit("save-document", quill.getText());
     console.log(quill.getText());
   };
@@ -32,13 +33,27 @@ function Editor() {
     socket.emit("join-room", 1, "zaid");
   }, [socket, quill]);
 
-  //To Push code to the database
+  useEffect(() => {
+    if (quill == null || socket == null) return;
+    socket.on("re-load-document", (doc) => {
+      console.log("reloading")
+      quill.setText(doc);
+    });
+  }, [socket, quill]);
 
-  // This code will work only when two people are connected from beginning, any person coming in between will not see the previous data because the editor is not yet connected to database
-  // recieved changes
+  // Save Document on new user connecting
+  useEffect(() => {
+    if (quill == null || socket == null) return;
+    socket.on("user-connected", (username) => {
+      saveDocument();
+    });
+  }, [socket, quill]);
+
+  // recieve changes socket to socket
   useEffect(() => {
     if (quill == null || socket == null) return;
     const handler = (delta) => {
+      console.log("recieving");
       quill.updateContents(delta);
     };
     socket.on("recieve-message", handler);
@@ -50,6 +65,7 @@ function Editor() {
 
   // useEffect for change in quill editor text
 
+  // Send changes from socket to socket
   useEffect(() => {
     if (quill == null || socket == null) return;
     const handler = (delta, oldDelta, source) => {
@@ -82,11 +98,11 @@ function Editor() {
           id="code-editor"
           className="main-editor-code"
           ref={editorRef}
-          onKeyUp={() => {
-            console.log("key up")
-            clearTimeout(timeout);
-            timeout = setTimeout(doneTyping, 500);
-          }}
+          // onKeyUp={() => {
+          //   console.log("key up");
+          //   clearTimeout(timeout);
+          //   timeout = setTimeout(saveDocument, 500);
+          // }}
           // onKeyDown={() => {
           //   console.log("key down")
           //   clearTimeout(timeout);
