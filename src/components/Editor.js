@@ -6,6 +6,7 @@ import "quill/dist/quill.snow.css";
 function Editor() {
   const [socket, setSocket] = useState();
   const [quill, setQuill] = useState();
+  const [online, setOnline] = useState([]);
   var timeout;
 
   useEffect(() => {
@@ -40,7 +41,9 @@ function Editor() {
       quill.setText(text);
       quill.enable();
     });
-    socket.emit("join-room", 1, "zaid");
+
+    const name = window.prompt("Enter your name:");
+    socket.emit("join-room", 1, name);
   }, [socket, quill]);
 
   // Update doc for other users when one of them saves their document
@@ -55,11 +58,15 @@ function Editor() {
   // Save Document on new user connecting
   useEffect(() => {
     if (quill == null || socket == null) return;
-    socket.on("user-connected", (username) => {
+    socket.on("user-connected", (username,room) => {
       saveDocument();
+      console.log(room);
+      setOnline(room)
     });
-    socket.on("user-disconnected", (username) => {
+    socket.on("user-disconnected", (username,room) => {
       console.log(username + " diconnected");
+      console.log(room);
+      setOnline(room)
     });
   }, [socket, quill]);
 
@@ -120,6 +127,11 @@ function Editor() {
           //   clearTimeout(timeout);
           // }}
         ></div>
+        <div>
+          {online.map((user) => {
+            return <div key={user}>{user}</div>;
+          })}
+        </div>
       </div>
     </>
   );
